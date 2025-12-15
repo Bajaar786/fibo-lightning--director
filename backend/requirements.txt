@@ -4,5 +4,5 @@ pydantic==2.5.0
 python-multipart==0.0.6
 httpx==0.25.2
 python-dotenv==1.0.0
-fal-client==0.4.1
+fal-client==0.7.0
 gunicorn>=21.0.0
