@@ -1,7 +1,7 @@
 // Configuration - Update this URL after deploying your backend
 const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:8000'
-    : 'https://your-backend-url.railway.app';  // TODO: Replace with your actual Railway backend URL
+    : 'https://your-backend-name.onrender.com';  // TODO: Replace with your actual Render backend URL
 
 // Check API health on load
 async function checkHealth() {
