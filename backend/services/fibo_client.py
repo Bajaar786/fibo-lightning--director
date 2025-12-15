@@ -1,7 +1,6 @@
 """
-Professional client for FIBO API with error handling and features
+Professional client for FIBO API using official fal-client library
 """
-import httpx
 import json
 import time
 from typing import Dict, Optional, List
@@ -22,12 +21,14 @@ class FIBOClient:
         size: str = "1024x1024",
         seed: Optional[int] = None
     ) -> Dict:
-        """Generate image with FIBO using fal-client library"""
+        """
+        Generate image with FIBO using fal-client.subscribe()
+        This is the CORRECT method - handles queue, status, and result automatically
+        """
         
         start_time = time.time()
         
         try:
-            # Import fal_client here to avoid import errors if not installed
             import fal_client
             
             # Parse size to aspect ratio
@@ -35,7 +36,7 @@ class FIBOClient:
             
             # Prepare arguments for FIBO
             arguments = {
-                "structured_prompt": json_prompt,  # FIBO expects structured_prompt as dict
+                "structured_prompt": json_prompt,  # FIBO expects dict
                 "seed": seed or int(time.time() * 1000) % 100000,
                 "steps_num": 40 if hdr else 30,
                 "guidance_scale": 5.0,
@@ -43,74 +44,45 @@ class FIBOClient:
                 "negative_prompt": self._get_negative_prompt(json_prompt)
             }
             
-            print(f"DEBUG: Calling FIBO with arguments: {list(arguments.keys())}")
+            print(f"DEBUG: Calling FIBO with seed: {arguments['seed']}")
             
-            # Submit request to FIBO using correct model ID
-            import asyncio
-            loop = asyncio.get_event_loop()
+            # CORRECT: Use subscribe() - handles everything automatically
+            def on_queue_update(update):
+                """Optional: Track progress"""
+                if hasattr(update, 'logs') and update.logs:
+                    for log in update.logs:
+                        if log.get('message'):
+                            print(f" FIBO: {log['message']}")
             
-            # Submit the request
-            handler = await loop.run_in_executor(
-                None,
-                lambda: fal_client.submit(
-                    "bria/fibo/generate",  # Correct model ID from docs
-                    arguments=arguments
-                )
+            # This is the correct API call - NO status(), NO result() calls needed
+            result = fal_client.subscribe(
+                "bria/fibo/generate",  # Your model ID
+                arguments=arguments,
+                with_logs=True,
+                on_queue_update=on_queue_update
             )
-            
-            request_id = handler.request_id
-            print(f"DEBUG: Submitted FIBO request with ID: {request_id}")
-            
-            # Poll for completion
-            max_wait_time = 120  # 2 minutes max
-            poll_interval = 2    # Check every 2 seconds
-            elapsed_time = 0
-            
-            while elapsed_time < max_wait_time:
-                # Check status
-                status = await loop.run_in_executor(
-                    None,
-                    lambda: fal_client.status("bria/fibo/generate", request_id, with_logs=True)
-                )
-                
-                print(f"DEBUG: Request status: {status.get('status', 'unknown')}")
-                
-                if status.get("status") == "COMPLETED":
-                    # Get the result
-                    result = await loop.run_in_executor(
-                        None,
-                        lambda: fal_client.result("bria/fibo/generate", request_id)
-                    )
-                    break
-                elif status.get("status") == "FAILED":
-                    error_msg = status.get("error", "Unknown error")
-                    raise Exception(f"FIBO generation failed: {error_msg}")
-                
-                # Wait before next poll
-                await asyncio.sleep(poll_interval)
-                elapsed_time += poll_interval
-            else:
-                raise Exception(f"FIBO generation timed out after {max_wait_time} seconds")
             
             processing_time = int((time.time() - start_time) * 1000)
             
-            print(f"DEBUG: FIBO result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
+            print(f"DEBUG: FIBO result keys: {list(result.keys())}")
             
             # Extract image URL from result
             image_url = None
-            if isinstance(result, dict):
-                if "image" in result and isinstance(result["image"], dict) and "url" in result["image"]:
-                    image_url = result["image"]["url"]
-                elif "images" in result and isinstance(result["images"], list) and len(result["images"]) > 0:
-                    image_url = result["images"][0].get("url")
-                elif "url" in result:
-                    image_url = result["url"]
+            if "image" in result and isinstance(result["image"], dict) and "url" in result["image"]:
+                image_url = result["image"]["url"]
+            elif "images" in result and isinstance(result["images"], list) and len(result["images"]) > 0:
+                first_img = result["images"][0]
+                if isinstance(first_img, dict) and "url" in first_img:
+                    image_url = first_img["url"]
+            elif "url" in result:
+                image_url = result["url"]
             
             if not image_url:
-                print(f"DEBUG: Full result: {json.dumps(result, indent=2)[:1000] if isinstance(result, dict) else str(result)}")
+                # For debugging
+                print(f"DEBUG: Result structure: {json.dumps(result, indent=2)[:500]}...")
                 raise Exception("No image URL found in FIBO response")
             
-            print(f"DEBUG: Successfully got image URL: {image_url[:60]}...")
+            print(f"DEBUG: Success! Image URL: {image_url[:60]}...")
             
             return {
                 "success": True,
@@ -122,10 +94,6 @@ class FIBOClient:
                 "hdr": hdr
             }
             
-        except ImportError:
-            # Fallback to direct HTTP if fal-client not available
-            return await self._fallback_http_generation(json_prompt, hdr, size, seed)
-            
         except Exception as e:
             processing_time = int((time.time() - start_time) * 1000)
             error_msg = str(e)
@@ -136,109 +104,129 @@ class FIBOClient:
                 "processing_time_ms": processing_time
             }
     
-    async def _fallback_http_generation(
+    async def generate_image_async(
         self,
         json_prompt: Dict,
-        hdr: bool,
-        size: str,
-        seed: Optional[int]
+        hdr: bool = True,
+        size: str = "1024x1024",
+        seed: Optional[int] = None
     ) -> Dict:
-        """Fallback HTTP method if fal-client fails"""
+        """
+        Alternative async version using submit_async() + get()
+        Use this if you need more control over the async flow
+        """
         
         start_time = time.time()
         
         try:
-            # Try different FIBO endpoints with correct model ID
-            endpoints = [
-                "https://fal.run/bria/fibo/generate",
-                "https://queue.fal.run/bria/fibo/generate"
-            ]
+            import fal_client
             
-            payload = {
+            # Prepare arguments
+            aspect_ratio = self._get_aspect_ratio_from_size(size)
+            arguments = {
                 "structured_prompt": json_prompt,
-                "seed": seed or 12345,
+                "seed": seed or int(time.time() * 1000) % 100000,
                 "steps_num": 40 if hdr else 30,
                 "guidance_scale": 5.0,
-                "aspect_ratio": self._get_aspect_ratio_from_size(size),
+                "aspect_ratio": aspect_ratio,
                 "negative_prompt": self._get_negative_prompt(json_prompt)
             }
             
-            headers = {
-                "Authorization": f"Key {self.api_key}",
-                "Content-Type": "application/json"
+            print(f"DEBUG: Submitting async FIBO request...")
+            
+            # CORRECT async pattern
+            handler = await fal_client.submit_async(
+                "bria/fibo/generate",
+                arguments=arguments,
+            )
+            
+            # Optional: Stream progress events
+            async for event in handler.iter_events(with_logs=True):
+                if hasattr(event, 'logs') and event.logs:
+                    for log in event.logs:
+                        print(f"Progress: {log.get('message', '')}")
+            
+            # Get final result
+            result = await handler.get()
+            
+            processing_time = int((time.time() - start_time) * 1000)
+            
+            # Extract image URL
+            if "image" in result and "url" in result["image"]:
+                image_url = result["image"]["url"]
+            else:
+                raise Exception(f"No image URL in result. Keys: {list(result.keys())}")
+            
+            return {
+                "success": True,
+                "image_url": image_url,
+                "request_id": handler.request_id,
+                "processing_time_ms": processing_time,
+                "size": size,
+                "hdr": hdr
             }
-            
-            for endpoint in endpoints:
-                try:
-                    print(f"DEBUG: Trying endpoint: {endpoint}")
-                    
-                    async with httpx.AsyncClient(timeout=90.0) as client:
-                        response = await client.post(endpoint, json=payload, headers=headers)
-                        
-                        print(f"DEBUG: Response status: {response.status_code}")
-                        
-                        if response.status_code == 200:
-                            result = response.json()
-                            
-                            # Extract image URL
-                            image_url = None
-                            if "image" in result and isinstance(result["image"], dict):
-                                image_url = result["image"]["url"]
-                            elif "images" in result and len(result["images"]) > 0:
-                                image_url = result["images"][0]["url"]
-                            
-                            if image_url:
-                                processing_time = int((time.time() - start_time) * 1000)
-                                return {
-                                    "success": True,
-                                    "image_url": image_url,
-                                    "request_id": result.get("request_id", "http-fallback"),
-                                    "seed": payload["seed"],
-                                    "processing_time_ms": processing_time,
-                                    "size": size,
-                                    "hdr": hdr
-                                }
-                        else:
-                            print(f"DEBUG: Error {response.status_code}: {response.text[:200]}")
-                            
-                except Exception as e:
-                    print(f"DEBUG: Endpoint {endpoint} failed: {str(e)}")
-                    continue
-            
-            raise Exception("All FIBO endpoints failed")
             
         except Exception as e:
             processing_time = int((time.time() - start_time) * 1000)
             return {
                 "success": False,
-                "error": f"HTTP fallback failed: {str(e)}",
+                "error": f"FIBO async failed: {str(e)}",
                 "processing_time_ms": processing_time
             }
 
     def _get_aspect_ratio_from_size(self, size: str) -> str:
         """Convert size string to aspect ratio"""
-        if size == "1024x1024":
-            return "1:1"
-        elif size == "768x1024":
-            return "3:4"
-        elif size == "1024x768":
-            return "4:3"
-        elif size == "1024x576":
-            return "16:9"
-        elif size == "576x1024":
-            return "9:16"
-        else:
-            return "1:1"  # Default square
+        size_map = {
+            "1024x1024": "1:1",
+            "768x768": "1:1",
+            "768x1024": "3:4",
+            "1024x768": "4:3",
+            "1024x576": "16:9",
+            "576x1024": "9:16",
+            "1536x1536": "1:1",
+        }
+        return size_map.get(size, "1:1")
 
     def _get_negative_prompt(self, json_prompt: Dict) -> str:
-        """Create intelligent negative prompt based on style"""
-        base_negative = "blurry, low quality, distorted, deformed, bad anatomy"
+        """Create intelligent negative prompt"""
+        base_negative = "{'style_medium':'digital illustration','artistic_style':'non-realistic'}"
         
-        # Add style-specific negatives
-        if json_prompt.get("style") == "photorealistic":
-            base_negative += ", cartoon, illustration, anime, painting"
+        # Add HDR-specific negatives if needed
+        if json_prompt.get("style_attributes", {}).get("dynamic_range") == "hdr":
+            base_negative += ", {'technical_flaws':'clipped highlights, blown out, crushed shadows'}"
         
         return base_negative
+    
+    def _create_fibo_json(self, user_prompt: str, lighting_params: Dict = None) -> Dict:
+        """
+        Create properly formatted FIBO JSON structure
+        Use this to ensure your JSON matches FIBO's schema
+        """
+        fibo_json = {
+            "short_description": user_prompt,
+            "background_setting": "professional cinematic scene",
+            "lighting": {
+                "conditions": "studio lighting",
+                "direction": "45 degrees from camera right",
+                "shadows": "soft, well-defined"
+            },
+            "aesthetics": {
+                "composition": "rule of thirds, balanced",
+                "color_scheme": "cinematic, desaturated",
+                "mood_atmosphere": "dramatic, intense"
+            },
+            "photographic_characteristics": {
+                "depth_of_field": "shallow",
+                "focus": "sharp on subject",
+                "camera_angle": "eye level",
+                "lens_focal_length": "50mm"
+            },
+            "style_medium": "photography",
+            "artistic_style": "realistic, cinematic",
+            "objects": []
+        }
+        
+        return fibo_json
     
     async def batch_generate(
         self,
