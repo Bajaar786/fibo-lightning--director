@@ -1,7 +1,7 @@
-// Configuration - Update this URL after deploying your backend
+// Configuration - Updated with your Render backend URL
 const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:8000'
-    : 'https://your-backend-name.onrender.com';  // TODO: Replace with your actual Render backend URL
+    : 'https://fibo-lightning-director-2.onrender.com';
 
 // Check API health on load
 async function checkHealth() {
