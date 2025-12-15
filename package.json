@@ -1,0 +1,20 @@
+{
+  "name": "fibo-lightning-director",
+  "version": "1.0.0",
+  "description": "Cinematic lighting control with FIBO AI",
+  "scripts": {
+    "dev": "python -m http.server 3000 --directory frontend",
+    "backend": "cd backend && python app.py",
+    "start": "concurrently \"npm run backend\" \"npm run dev\"",
+    "install-backend": "cd backend && pip install -r requirements.txt",
+    "build": "echo 'Frontend is ready for deployment' && cp -r frontend dist",
+    "deploy:netlify": "netlify deploy --prod --dir=frontend"
+  },
+  "dependencies": {
+    "@fal-ai/client": "^1.7.2",
+    "concurrently": "^8.2.2"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

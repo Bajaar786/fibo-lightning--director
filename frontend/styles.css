@@ -1,0 +1,348 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: white;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+}
+
+header h1 {
+    font-size: 3em;
+    margin-bottom: 10px;
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.controls-panel {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 25px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+h2, h3 {
+    margin-bottom: 15px;
+    color: #4ecdc4;
+}
+
+textarea {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 16px;
+    resize: vertical;
+    font-family: monospace;
+}
+
+.light-control {
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.light-control label {
+    min-width: 150px;
+}
+
+input[type="range"] {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    outline: none;
+}
+
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.generate-btn, .secondary-btn, .small-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 10px 0;
+}
+
+.generate-btn {
+    background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+    color: white;
+}
+
+.generate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+}
+
+.secondary-btn {
+    background: rgba(78, 205, 196, 0.2);
+    color: #4ecdc4;
+    border: 2px solid #4ecdc4;
+}
+
+.results-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.image-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#result-image {
+    max-width: 100%;
+    max-height: 500px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.loading {
+    text-align: center;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.1);
+    border-top: 5px solid #ff6b6b;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.json-viewer {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 10px;
+    font-family: monospace;
+    font-size: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+.quick-presets {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+}
+
+.preset-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.preset {
+    padding: 10px 20px;
+    background: rgba(78, 205, 196, 0.2);
+    border: 1px solid #4ecdc4;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.preset:hover {
+    background: rgba(78, 205, 196, 0.4);
+    transform: translateY(-2px);
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+}
+
+footer a {
+    color: #4ecdc4;
+    text-decoration: none;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 15px;
+}
+/* Add these to your existing CSS */
+
+.refine-section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.refine-controls {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.refine-input {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 16px;
+}
+
+.refine-input:focus {
+    outline: 2px solid #4ecdc4;
+}
+
+.refine-btn {
+    padding: 12px 24px;
+    background: linear-gradient(45deg, #8e2de2, #4a00e0);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.refine-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(142, 45, 226, 0.4);
+}
+
+.quick-refine-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+}
+
+.quick-refine {
+    padding: 8px 16px;
+    background: rgba(78, 205, 196, 0.2);
+    border: 1px solid #4ecdc4;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 14px;
+}
+
+.quick-refine:hover {
+    background: rgba(78, 205, 196, 0.4);
+    transform: translateY(-2px);
+}
+
+.refine-status {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    min-height: 20px;
+}
+
+.refine-status.success {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
+}
+
+.refine-status.error {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+}
+
+.refine-status.info {
+    background: rgba(52, 152, 219, 0.2);
+    color: #3498db;
+    border: 1px solid #3498db;
+}
+
+/* History section for showing refinements */
+.refine-history {
+    margin-top: 20px;
+}
+
+.history-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    border-radius: 6px;
+    margin: 5px 0;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.history-instruction {
+    color: #4ecdc4;
+    font-style: italic;
+}
